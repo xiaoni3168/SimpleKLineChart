@@ -176,7 +176,13 @@ const defaultRealTime = {
   timeLine: {
     color: '#2196F3',
     size: 1,
-    areaFillColor: 'rgba(33, 150, 243, 0.08)'
+    areaFillColor: 'rgba(33, 150, 243, 0.08)',
+    gradientFill: {
+      display: false,
+      topColor: '#000000',
+      bottomColor: '#ffffff',
+      offsetTop: 0
+    }
   },
   /**
    * 均线
@@ -398,6 +404,9 @@ const defaultFloatLayer = {
         family: 'Helvetica Neue',
         weight: 'normal',
         color: '#D9D9D9',
+        upColor: '#D9D9D9',
+        downColor: '#D9D9D9',
+        noChangeColor: '#D9D9D9',
         marginLeft: 8,
         marginTop: 6,
         marginRight: 8,

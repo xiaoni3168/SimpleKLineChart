@@ -7,7 +7,7 @@
 (function (global, factory) {
 typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
 typeof define === 'function' && define.amd ? define(['exports'], factory) :
-(global = global || self, factory(global.klinecharts = {}));
+(global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.klinecharts = {}));
 }(this, (function (exports) { 'use strict';
 
 function _typeof(obj) {
@@ -160,7 +160,7 @@ function _possibleConstructorReturn(self, call) {
 function _createSuper(Derived) {
   var hasNativeReflectConstruct = _isNativeReflectConstruct();
 
-  return function () {
+  return function _createSuperInternal() {
     var Super = _getPrototypeOf(Derived),
         result;
 
@@ -223,9 +223,12 @@ function _arrayLikeToArray(arr, len) {
   return arr2;
 }
 
-function _createForOfIteratorHelper(o) {
+function _createForOfIteratorHelper(o, allowArrayLike) {
+  var it;
+
   if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) {
-    if (Array.isArray(o) || (o = _unsupportedIterableToArray(o))) {
+    if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") {
+      if (it) o = it;
       var i = 0;
 
       var F = function () {};
@@ -251,8 +254,7 @@ function _createForOfIteratorHelper(o) {
     throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
   }
 
-  var it,
-      normalCompletion = true,
+  var normalCompletion = true,
       didErr = false,
       err;
   return {
@@ -569,7 +571,13 @@ var defaultRealTime = {
   timeLine: {
     color: '#2196F3',
     size: 1,
-    areaFillColor: 'rgba(33, 150, 243, 0.08)'
+    areaFillColor: 'rgba(33, 150, 243, 0.08)',
+    gradientFill: {
+      display: false,
+      topColor: '#000000',
+      bottomColor: '#ffffff',
+      offsetTop: 0
+    }
   },
 
   /**
@@ -799,6 +807,9 @@ var defaultFloatLayer = {
         family: 'Helvetica Neue',
         weight: 'normal',
         color: '#D9D9D9',
+        upColor: '#D9D9D9',
+        downColor: '#D9D9D9',
+        noChangeColor: '#D9D9D9',
         marginLeft: 8,
         marginTop: 6,
         marginRight: 8,
@@ -6525,7 +6536,15 @@ var CandleStickView = /*#__PURE__*/function (_TechnicalIndicatorVi) {
 
         if (timeLineAreaPoints.length > 0) {
           // 绘制分时线填充区域
-          _this._ctx.fillStyle = timeLine.areaFillColor;
+          if (timeLine.gradientFill.display) {
+            var gradient = _this._ctx.createLinearGradient(0, 0, 0, _this._height + timeLine.gradientFill.offsetTop);
+
+            gradient.addColorStop(0, timeLine.gradientFill.topColor);
+            gradient.addColorStop(1, timeLine.gradientFill.bottomColor);
+            _this._ctx.fillStyle = gradient;
+          } else {
+            _this._ctx.fillStyle = timeLine.areaFillColor;
+          }
 
           _this._ctx.beginPath();
 
@@ -7030,6 +7049,8 @@ var CandleStickFloatLayerView = /*#__PURE__*/function (_TechnicalIndicatorFl) {
         var volumePrecision = this._chartData.volumePrecision();
 
         values = [formatValue(kLineData, 'timestamp'), formatValue(kLineData, 'open'), formatValue(kLineData, 'close'), formatValue(kLineData, 'high'), formatValue(kLineData, 'low'), formatValue(kLineData, 'volume')];
+        var open = values[1],
+            close = values[2];
         values.forEach(function (value, index) {
           switch (index) {
             case 0:
@@ -7046,7 +7067,23 @@ var CandleStickFloatLayerView = /*#__PURE__*/function (_TechnicalIndicatorFl) {
 
             default:
               {
-                values[index] = formatPrecision(value, pricePrecision);
+                // values[index] = formatPrecision(value, pricePrecision)
+                var _value = formatPrecision(value, pricePrecision);
+
+                var color = floatLayerPromptCandleStick.text.color;
+
+                if (open > close) {
+                  color = floatLayerPromptCandleStick.text.downColor;
+                } else if (open < close) {
+                  color = floatLayerPromptCandleStick.text.upColor;
+                } else {
+                  color = floatLayerPromptCandleStick.text.noChangeColor;
+                }
+
+                values[index] = {
+                  value: _value,
+                  color: color
+                };
                 break;
               }
           }
@@ -10705,7 +10742,9 @@ var ChartPane = /*#__PURE__*/function () {
       this._chartContainer.style.outline = 'none';
       this._chartContainer.style.borderStyle = 'none';
       this._chartContainer.style.width = '100%';
-      this._chartContainer.style.cursor = 'crosshair';
+      this._chartContainer.style.cursor = 'crosshair'; // 解决FireFox上容器高度计算问题
+
+      this._chartContainer.style.height = '0px';
       this._chartContainer.tabIndex = 1;
       container.appendChild(this._chartContainer);
     }

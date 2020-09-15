@@ -87,7 +87,14 @@ export default class CandleStickView extends TechnicalIndicatorView {
 
       if (timeLineAreaPoints.length > 0) {
         // 绘制分时线填充区域
-        this._ctx.fillStyle = timeLine.areaFillColor
+        if (timeLine.gradientFill.display) {
+          let gradient = this._ctx.createLinearGradient(0, 0, 0, this._height + timeLine.gradientFill.offsetTop)
+          gradient.addColorStop(0, timeLine.gradientFill.topColor)
+          gradient.addColorStop(1, timeLine.gradientFill.bottomColor)
+          this._ctx.fillStyle = gradient
+        } else {
+          this._ctx.fillStyle = timeLine.areaFillColor
+        }
         this._ctx.beginPath()
         this._ctx.moveTo(timeLineAreaPoints[0].x, timeLineAreaPoints[0].y)
         for (let i = 1; i < timeLineAreaPoints.length; i++) {
